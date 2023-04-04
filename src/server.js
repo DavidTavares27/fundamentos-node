@@ -1,27 +1,32 @@
 import http from "node:http";
+import { json } from "./middlewares/json.js";
+import { Database } from "./database.js";
 
-const users = [];
-
+const database = new Database();
 //através do req eu vou ter acesso a todos os dados da requisição/ res: serve para devolver a resposta para quem está chamando o nosso serviço.
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const { method, url } = req;
 
+  await json(req, res);
+
   if (method === "GET" && url === "/users") {
-    return res
-      .setHeader("content-type", "application/json")
-      .end(JSON.stringify(users));
+    const users = database.select("users");
+    return res.end(JSON.stringify(users));
   }
 
   if (method === "POST" && url === "/users") {
-    users.push({
+    const { name, email } = req.body;
+    const user = {
       id: 1,
-      name: "Jhon Doe",
-      email: "jhondoe@example.com",
-    });
+      name,
+      email,
+    };
+
+    database.insert("users", user);
     return res.writeHead(201).end();
   }
 
   return res.writeHead(404).end();
 });
 
-server.listen(3333);
+server.listen(3000);
